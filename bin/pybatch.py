@@ -31,9 +31,9 @@ def parser_args():
                         nargs=1, help='script file', type=str)
     parser.add_argument('-m', '--max_workers', required=False, nargs='?',
                         default=multiprocessing.cpu_count(), type=int)
-    parser.add_argument('-n', '--dry_run', required=False, action='store_true',
+    parser.add_argument('-n', '--dry-run', required=False, action='store_true',
                         help='verbose', default=False)
-    parser.add_argument('-x', '--sys_path', action='append',
+    parser.add_argument('-x', '--sys-path', action='append',
                         nargs='?', help='extra path')
     #parser.print_help()
     #args = parser.parse_args()
@@ -58,10 +58,10 @@ def parser_args():
 #     # fake
 #     #--infiles 1 2 3 4 5
 #     #--max_workers 1
-#     #--dry_run
-#     --sys_path /home/matthias/jupyter
-#     --sys_path '/home/matthias/python'
-#     --sys_path /home/matthias/jupyter/bia
+#     #--dry-run
+#     --sys-path /home/matthias/jupyter
+#     --sys-path '/home/matthias/python'
+#     --sys-path /home/matthias/jupyter/bia
 #     '''
 #     for line in t.splitlines():
 #         print(line)
@@ -138,7 +138,7 @@ def main(flags):
     if in_files == None or len(in_files) == 0:
         raise Exception("filenames are empty")
 
-    if flags.dry_run:
+    if flags.dry-run:
         print('script dry run:')
         print(' args:', vars(flags))
         print(' parameters:\n  ', '\n   '.join([': '.join([k,str(v)]) for (k,v) in param.items()]))
@@ -178,9 +178,9 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit(-1)
 
-        load_batchtool(sys.argv[0], flags.sys_path)
+        load_batchtool(sys.argv[0], flags.sys-path)
         #from bia.tools.batchtool import batchjob, batchjob_helper
-        from batchtool import batchjob, batchjob_helper
+        from batchtool import batchjob, batchjob_helper # type: ignore
 
         sys.exit(main(flags=flags))
     except Exception as e:

@@ -21,10 +21,10 @@ def test():
     # fake
     #--infiles 1 2 3 4 5
     #--max_workers 1
-    #--dry_run
-    --sys_path /home/matthias/jupyter
-    --sys_path '/home/matthias/python'
-    --sys_path /home/matthias/jupyter/bia
+    #--dry-run
+    --sys-path /home/matthias/jupyter
+    --sys-path '/home/matthias/python'
+    --sys-path /home/matthias/jupyter/bia
     '''
     for line in t.splitlines():
         print(line)
@@ -69,6 +69,7 @@ class TestStringMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    print(test())
     #unittest.main()
     t = TestStringMethods()
     t.setUp()
