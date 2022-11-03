@@ -1,8 +1,7 @@
 from functools import reduce
 import os
 from random import randint
-#from bia.tools.batchtool import batchjob, batchjob_helper
-from batchtool import batchjob, batchjob_helper
+from batchtool import batchjob, batchjob_helper  # type: ignore
 
 @batchjob.suppress_output
 def process_file(in_file, out_file, param, lock):
@@ -19,7 +18,7 @@ def process_file(in_file, out_file, param, lock):
     # test exceptions
     if randint(0, 1) % 2 == 0:
         raise Exception('test exception raised to test for batch failed')
-    #sleep(randint(0,3))
+
     return 'process file (PID={0}/BID={1}): {2}'.format(os.getpid(), param['batch_id'], randint(0, 3))
 
 
