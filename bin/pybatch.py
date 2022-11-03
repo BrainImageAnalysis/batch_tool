@@ -113,8 +113,9 @@ def load_batchtool(this_file, extra_path):
     #add_to_syspath('/home/matthias/python')
     #print(os.path.join(os.path.dirname(this_file), '../tools'))
     add_to_syspath(os.path.join(os.path.dirname(this_file), '../lib'))
-    for p in extra_path:
-        add_to_syspath(p.strip('\'').strip('\"'))
+    if not extra_path is None:
+        for p in extra_path:
+            add_to_syspath(p.strip('\'').strip('\"'))
 
 
 def main(flags):
@@ -138,7 +139,7 @@ def main(flags):
     if in_files == None or len(in_files) == 0:
         raise Exception("filenames are empty")
 
-    if flags.dry-run:
+    if flags.dry_run:
         print('script dry run:')
         print(' args:', vars(flags))
         print(' parameters:\n  ', '\n   '.join([': '.join([k,str(v)]) for (k,v) in param.items()]))
@@ -178,7 +179,7 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit(-1)
 
-        load_batchtool(sys.argv[0], flags.sys-path)
+        load_batchtool(sys.argv[0], flags.sys_path)
         #from bia.tools.batchtool import batchjob, batchjob_helper
         from batchtool import batchjob, batchjob_helper # type: ignore
 
