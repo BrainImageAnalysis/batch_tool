@@ -12,7 +12,8 @@
             "args": [
                 "--script", "samples/test_script.py",
                 "--infiles", "1", "2", "3", "4", "5",
-                "--dry-run"
+                //"--dry-run",
+                "--verbose"
             ],
             "console": "integratedTerminal",
             "justMyCode": false
