@@ -80,6 +80,10 @@ def add_to_syspath(path: str):
 
 def parameters(flags):
     param = {}
+
+    if flags == None:
+        return param
+
     for p in flags:
         k,v = p.split('=')
         param[k] = v
@@ -113,7 +117,7 @@ def load_batchtool(this_file, extra_path):
     #add_to_syspath('/home/matthias/python')
     #print(os.path.join(os.path.dirname(this_file), '../tools'))
     add_to_syspath(os.path.join(os.path.dirname(this_file), '../lib'))
-    if not extra_path is None:
+    if extra_path != None:
         for p in extra_path:
             add_to_syspath(p.strip('\'').strip('\"'))
 
