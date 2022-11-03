@@ -131,13 +131,13 @@ def main(flags):
         raise Exception(
             '"process_file(in_file, out_file, param, lock)" not defined in script "{}"'.format(*flags.script))
 
-    in_files = str(flags.infiles[0])
+    in_files = flags.infiles
     # in_files, out_files = batchjob_helper.get_filenames(
     #     data_folder, pattern, out_folder, extension, fstub, subpath, out_extension)
 
-    if in_files.find('*') > -1:
+    if len(in_files) == 1 and in_files[0].find('*') > -1:
         in_files = sorted(
-            glob.glob(os.path.join(in_files.strip('\'').strip('\"')), recursive=True))
+            glob.glob(os.path.join(in_files[0].strip('\'').strip('\"')), recursive=True))
     out_files = in_files
 
     if in_files == None or len(in_files) == 0:
@@ -184,7 +184,6 @@ if __name__ == "__main__":
             sys.exit(-1)
 
         load_batchtool(sys.argv[0], flags.sys_path)
-        #from bia.tools.batchtool import batchjob, batchjob_helper
         from batchtool import batchjob, batchjob_helper # type: ignore
 
         sys.exit(main(flags=flags))
