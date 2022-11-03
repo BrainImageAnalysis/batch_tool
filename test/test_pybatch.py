@@ -69,9 +69,8 @@ class TestStringMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print(test())
-    #unittest.main()
-    t = TestStringMethods()
-    t.setUp()
-    t.logger.error('test')
-    t.test_simple()
+    unittest.main()
+    # t = TestStringMethods()
+    # t.setUp()
+    # t.logger.error('test')
+    # t.test_simple()
