@@ -6,6 +6,9 @@
         "-p",
         "test_*.py"
     ],
+    "python.analysis.extraPaths": [
+        "lib"
+    ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": true
 }
