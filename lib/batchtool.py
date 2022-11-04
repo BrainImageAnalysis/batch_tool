@@ -28,6 +28,8 @@ class batchjob:
             # creating a lock object
             m = multiprocessing.Manager()
             d_shared = m.dict()
+            self.param = param
+            self.param['d_shared'] = d_shared
             lock = m.Lock()
             res = []
             self.results = [None for i in range(len(batches))]
@@ -75,7 +77,7 @@ class batchjob:
 
 
     def process_result(self, fn):
-        return fn(self.results)
+        return fn(self.results, self.param)
 
     def print_rusage(self):
         # peak memory usage (kilobytes on Linux)

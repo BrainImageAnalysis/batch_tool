@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from collections import defaultdict
+import argparse
 import glob
 import importlib
-import sys as sys
-import argparse
-import textwrap
-import os
 import multiprocessing
+import os
+import sys as sys
+import textwrap
 
 
 def parser_args():
@@ -15,11 +14,10 @@ def parser_args():
                                      fromfile_prefix_chars='@',
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description=textwrap.dedent('''\
-        Please do not mess up this text!
+        batch tool
         --------------------------------
-            I have indented it
-            exactly the way
-            I want it
+        example:
+            pybatch.py --script script_file.py --parameter thres=0.75 --infiles **/img*.nii.gz
         '''))
     parser.add_argument('-p', '--parameter', action='append',
                         nargs='?', help='parameters')
@@ -32,42 +30,11 @@ def parser_args():
     parser.add_argument('-m', '--max_workers', required=False, nargs='?',
                         default=multiprocessing.cpu_count(), type=int)
     parser.add_argument('-n', '--dry-run', required=False, action='store_true',
-                        help='verbose', default=False)
+                        help='print first batch item and parameters then exit',
+                        default=False)
     parser.add_argument('-x', '--sys-path', action='append',
                         nargs='?', help='extra path')
-    #parser.print_help()
-    #args = parser.parse_args()
-    #return args
     return parser
-
-
-# def test():
-#     t = '''
-#     --script samples/test_script.py
-#     --parameter p1=5
-#     --parameter p2=3
-#     --verbose
-#     #--infiles /disk/matthias/hokto/hokto_data/DATA/**/brain_img.nii.gz
-#     # quotes
-#     --infiles '/disk/matthias/hokto/hokto_data/DATA/**/brain_img.nii.gz'
-#     --infiles "/disk/matthias/hokto/hokto_data/DATA/**/brain_img.nii.gz"
-#     # will fail
-#     #--infiles /disk/matthias/hokto/hokto_data/DATA/*/brain_img.nii.gz
-#     # no glob
-#     #--infiles '/disk/matthias/hokto/hokto_data/DATA/brain_img.nii.gz'
-#     # fake
-#     #--infiles 1 2 3 4 5
-#     #--max_workers 1
-#     #--dry-run
-#     --sys-path /home/matthias/jupyter
-#     --sys-path '/home/matthias/python'
-#     --sys-path /home/matthias/jupyter/bia
-#     '''
-#     for line in t.splitlines():
-#         print(line)
-#         if line.replace(' ', '').startswith('#'):
-#             t = t.replace(line,'')
-#     return t
 
 
 def add_to_syspath(path: str):
@@ -75,7 +42,6 @@ def add_to_syspath(path: str):
         if p == path:
             return
     sys.path.append(path)
-    #print(sys.path)
 
 
 def parameters(flags):
@@ -85,21 +51,22 @@ def parameters(flags):
         return param
 
     for p in flags:
-        k,v = p.split('=')
+        k, v = p.split('=')
         param[k] = v
     return param
 
 
 def print_parameters(param):
-    r = [': '.join([k,str(v)])+'\n' for (k,v) in param.items()]
+    r = [': '.join([k, str(v)])+'\n' for (k, v) in param.items()]
     print(*r)
+
 
 def load_script(filename):
     if not os.path.exists(filename):
         raise FileNotFoundError('file not found: "{}"'.format(filename))
 
     path, mod = os.path.split(os.path.abspath(filename))
-    print(path,mod)
+    print(path, mod)
     add_to_syspath(path)
     mod = mod.replace('.py', '')
 
@@ -108,15 +75,11 @@ def load_script(filename):
 
 
 def load_batchtool(this_file, extra_path):
-    #script = importlib.import_module(mod)
     # slurm tools
     add_to_syspath('/disk/soft/bia_software/slurm_tools')
-    #
-    #add_to_syspath('/home/matthias/jupyter')
-    #add_to_syspath('/home/matthias/jupyter/bia')
-    #add_to_syspath('/home/matthias/python')
-    #print(os.path.join(os.path.dirname(this_file), '../tools'))
+    # add self
     add_to_syspath(os.path.join(os.path.dirname(this_file), '../lib'))
+    # add extra paths
     if extra_path != None:
         for p in extra_path:
             add_to_syspath(p.strip('\'').strip('\"'))
@@ -146,7 +109,8 @@ def main(flags):
     if flags.dry_run:
         print('script dry run:')
         print(' args:', vars(flags))
-        print(' parameters:\n  ', '\n   '.join([': '.join([k,str(v)]) for (k,v) in param.items()]))
+        print(' parameters:\n  ', '\n   '.join(
+            [': '.join([k, str(v)]) for (k, v) in param.items()]))
         print(' first batch item:')
         print(' ', next(zip(in_files, out_files)))
         return 0
@@ -157,14 +121,13 @@ def main(flags):
             group_batches = script.group_batches
 
         bj.process_files(script.process_file, in_files=in_files,
-                            out_files=out_files, param=param, max_workers=32, group_batches=group_batches)
+                         out_files=out_files, param=param, max_workers=32, group_batches=group_batches)
 
         bj.print_result()
         if hasattr(script, 'process_result'):
             r = bj.process_result(fn=script.process_result)
             print('result:', r)
-        # r2 = process_result(bj.get_result())
-        # print(r1, r2)
+
         bj.print_rusage()
 
         return 0
@@ -176,7 +139,6 @@ if __name__ == "__main__":
         parser = parser_args()
         #print(parser.prog)
         try:
-            #flags = parser.parse_args(test().split())
             flags = parser.parse_args()
         except Exception as e:
             print(e)
@@ -184,7 +146,8 @@ if __name__ == "__main__":
             sys.exit(-1)
 
         load_batchtool(sys.argv[0], flags.sys_path)
-        from batchtool import batchjob, batchjob_helper # type: ignore
+        # import the batchtool before call main
+        from batchtool import batchjob, batchjob_helper  # type: ignore
 
         sys.exit(main(flags=flags))
     except Exception as e:
