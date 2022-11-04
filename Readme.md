@@ -109,3 +109,10 @@ srun --pty --mem 16G -c 10 -t 240 conda run -n pytorch pybatch.py --max_workers 
 ```bash
 srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 conda run -n pytorch  pybatch.py --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
+
+## jupyter notebooks
+batch tool class can also be used in notebooks
+see the sample file for usage
+```
+samples/template_process_files.ipynb
+```
