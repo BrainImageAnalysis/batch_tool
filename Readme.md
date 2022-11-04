@@ -92,6 +92,14 @@ count python files and folders which have files (example needs numpy)
 ```bash
 conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script4.py --infiles ~/python/batch_tool/**/*.py  --verbose
 ```
+it is possible to use multiple processes in a batch process
+```bash
+pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script5.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+```
+it is possible to use multiple threads in a batch process
+```bash
+pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script6.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+```
 ## conda
 
 run in a conda env
