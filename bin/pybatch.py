@@ -34,6 +34,14 @@ def parser_args():
                         default=False)
     parser.add_argument('-x', '--sys-path', action='append',
                         nargs='?', help='extra path')
+
+    def convert_arg_line_to_args(arg_line):
+        for arg in arg_line.split():
+            if not arg.strip():
+                continue
+            yield arg
+    parser.convert_arg_line_to_args = convert_arg_line_to_args
+
     return parser
 
 
@@ -62,6 +70,7 @@ def print_parameters(param):
 
 
 def load_script(filename):
+    filename = os.path.expandvars(filename)
     if not os.path.exists(filename):
         raise FileNotFoundError('file not found: "{}"'.format(filename))
 
