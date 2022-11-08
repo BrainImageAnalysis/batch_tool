@@ -100,6 +100,10 @@ it is possible to use multiple threads in a batch process
 ```bash
 pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script6.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
+read from file
+```bash
+pybatch.py @samples/cmdline.txt --dry-run
+```
 ## conda
 
 run in a conda env
