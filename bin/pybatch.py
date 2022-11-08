@@ -35,7 +35,11 @@ def parser_args():
     parser.add_argument('-x', '--sys-path', action='append',
                         nargs='?', help='extra path')
 
-    def convert_arg_line_to_args(arg_line):
+    def convert_arg_line_to_args(arg_line: str):
+        # ignore commented lines
+        if arg_line.strip().startswith('#'):
+            return
+        # same syntax as cmdline
         for arg in arg_line.split():
             if not arg.strip():
                 continue
