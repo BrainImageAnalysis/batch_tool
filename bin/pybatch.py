@@ -100,6 +100,17 @@ def load_batchtool(this_file, extra_path):
             add_to_syspath(p.strip('\'').strip('\"'))
 
 
+def expand_filenames(in_files):
+    in_files_glob = []
+    for file in in_files:
+        if file.find('*') > -1:
+            expand_in_files = sorted(
+                glob.glob(os.path.join(in_files[0].strip('\'').strip('\"')), recursive=True))
+            in_files_glob.extend(expand_in_files)
+        else:
+            in_files_glob.append(file)
+    return in_files_glob
+
 def main(flags):
     param = parameters(flags.parameter)
     param['verbose'] = flags.verbose
@@ -109,13 +120,7 @@ def main(flags):
         raise Exception(
             '"process_file(in_file, out_file, param, lock)" not defined in script "{}"'.format(*flags.script))
 
-    in_files = flags.infiles
-    # in_files, out_files = batchjob_helper.get_filenames(
-    #     data_folder, pattern, out_folder, extension, fstub, subpath, out_extension)
-
-    if len(in_files) == 1 and in_files[0].find('*') > -1:
-        in_files = sorted(
-            glob.glob(os.path.join(in_files[0].strip('\'').strip('\"')), recursive=True))
+    in_files = expand_filenames(flags.infiles)
     out_files = in_files
 
     if in_files == None or len(in_files) == 0:
