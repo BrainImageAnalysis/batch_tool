@@ -23,6 +23,8 @@ def parser_args():
                         nargs='?', help='parameters')
     parser.add_argument('-v', '--verbose', required=False, action='store_true',
                         help='verbose', default=False)
+    parser.add_argument('-r', '--print_results', required=False, action='store_true',
+                        help='print results for each batch', default=False)
     parser.add_argument('-i', '--infiles', required=True,
                         nargs='+', help='file names', type=str)
     parser.add_argument('-s', '--script', required=True,
@@ -129,14 +131,19 @@ def main(flags):
         return 0
     else:
         bj = batchjob()
+
         group_batches = None
         if hasattr(script, 'group_batches'):
             group_batches = script.group_batches
 
+        max_workers = flags.max_workers
         bj.process_files(script.process_file, in_files=in_files,
-                         out_files=out_files, param=param, max_workers=32, group_batches=group_batches)
+                         out_files=out_files, param=param,
+                         max_workers=max_workers, group_batches=group_batches)
 
-        bj.print_result()
+        if flags.print_results:
+            bj.print_result()
+
         if hasattr(script, 'process_result'):
             r = bj.process_result(fn=script.process_result)
             print('result:', r)
