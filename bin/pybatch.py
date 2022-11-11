@@ -105,7 +105,7 @@ def expand_filenames(in_files):
     for file in in_files:
         if file.find('*') > -1:
             expand_in_files = sorted(
-                glob.glob(os.path.join(in_files[0].strip('\'').strip('\"')), recursive=True))
+                glob.glob(os.path.join(file.strip('\'').strip('\"')), recursive=True))
             in_files_glob.extend(expand_in_files)
         else:
             in_files_glob.append(file)
