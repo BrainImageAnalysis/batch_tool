@@ -9,28 +9,37 @@ from concurrent import futures
 from contextlib import redirect_stdout
 from functools import wraps
 from io import StringIO
-
+from tqdm import tqdm
 
 class batchjob:
     def __init__(self) -> None:
-        #self.parser = argparse.ArgumentParser()
         self.results = None
         pass
 
-    # def _init_pool(self, the_data):
-    #     global d_shared
-    #     d_shared = the_data
+    def _init_job(self, batches: list, param: dict) -> tuple[list, dict]:
+        # TODO add init function
+        return batches, param
 
     def _process_file_batch(self, fn, batches: list, param: dict, max_workers: int = 1):
-        # TODO check ThreadPoolExecutor
+        sconfig = self.get_slurm_config()
+        if sconfig.get('SLURM_CPUS_PER_TASK') != None:
+            cpus_per_task = int(sconfig.get('SLURM_CPUS_PER_TASK'))
+            if cpus_per_task < max_workers:
+                print('WARNING: max_workers={} > SLURM_CPUS_PER_TASK={}'.format(
+                    max_workers,
+                    cpus_per_task))
+                max_workers = cpus_per_task
         with futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        #with futures.ProcessPoolExecutor(max_workers=max_workers, initializer=self._init_pool, initargs=(param,)) as executor:
-            # creating a lock object
+            # creating shared dict and lock object
             m = multiprocessing.Manager()
             d_shared = m.dict()
             self.param = param
             self.param['d_shared'] = d_shared
             lock = m.Lock()
+
+            # call init
+            batches, param = self._init_job(batches, param)
+
             res = []
             self.results = [None for i in range(len(batches))]
             for bid, batch in enumerate(batches):
@@ -41,7 +50,6 @@ class batchjob:
                 f = executor.submit(fn, infile, outfile, p, lock)
                 #f.add_done_callback()
                 res.append(f)
-
 
             for i, f in enumerate(futures.as_completed(res)):
                 if f.exception() == None:
@@ -86,6 +94,14 @@ class batchjob:
             resource.RUSAGE_SELF).ru_maxrss * inMb))
         print('RUSAGE_CHILDREN: {0:.2f} Mb'.format(resource.getrusage(
             resource.RUSAGE_CHILDREN).ru_maxrss * inMb))
+
+    def get_slurm_config(self):
+        # slurm environment variables
+        sconfig = {}
+        for k in os.environ:
+            if k.find('SLURM') > -1:
+                sconfig[k] = os.environ[k]
+        return sconfig
 
 
     ''' decorators'''
