@@ -35,5 +35,5 @@ def group_batches_by_folder(in_files, out_files):
 
 
 # example: group batches by folder
-def group_batches(infiles, outfiles):
+def group_batches(infiles, outfiles, parameters):
     return group_batches_by_folder(infiles, outfiles)

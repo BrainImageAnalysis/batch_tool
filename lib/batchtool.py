@@ -69,7 +69,7 @@ class batchjob:
             # from single files
             batches = list(zip(in_files, out_files))
         else:
-            batches = group_batches(in_files, out_files)
+            batches = group_batches(in_files, out_files, param)
 
         self._process_file_batch(fn=fn, batches=batches,
                             param=param, max_workers=max_workers)

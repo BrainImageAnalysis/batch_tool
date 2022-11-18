@@ -126,20 +126,24 @@ def main(flags):
     if in_files == None or len(in_files) == 0:
         raise Exception("filenames are empty")
 
+    group_batches = None
+    if hasattr(script, 'group_batches'):
+        group_batches = script.group_batches
+
     if flags.dry_run:
         print('script dry run:')
         print(' args:', vars(flags))
         print(' parameters:\n  ', '\n   '.join(
             [': '.join([k, str(v)]) for (k, v) in param.items()]))
         print(' first batch item:')
-        print(' ', next(zip(in_files, out_files)))
+        if group_batches == None:
+            # from single files
+            print(' ', next(zip(in_files, out_files)))
+        else:
+            print(' ', next(iter(group_batches(in_files, out_files, param))))
         return 0
     else:
         bj = batchjob()
-
-        group_batches = None
-        if hasattr(script, 'group_batches'):
-            group_batches = script.group_batches
 
         max_workers = flags.max_workers
         bj.process_files(script.process_file, in_files=in_files,

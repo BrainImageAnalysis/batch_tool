@@ -48,8 +48,8 @@ def process_result(results: list, param: dict):
     return do_something(results)
 
 # group batches and return new batches -> runs before loop
-def group_batches(infiles, outfiles):
-    return do_something(infiles, outfiles)
+def group_batches(infiles, outfiles, parameters):
+    return do_something(infiles, outfiles, parameters)
 
 ```
 ### extra libs
