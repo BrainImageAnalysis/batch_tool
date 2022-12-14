@@ -1,25 +1,28 @@
 # batch tool
 ```
-usage: pybatch.py [-h] [-p [PARAMETER]] [-v] -i INFILES [INFILES ...] -s SCRIPT [-m [MAX_WORKERS]] [-n] [-x [SYS_PATH]]
+usage: pybatch.py [-h] [-p [PARAMETER]] [-v] [-r] -s SCRIPT [-m [MAX_WORKERS]]
+                  [-n] [-x [SYS_PATH]] [--no-shadow] -i INFILES [INFILES ...]
 
 batch tool
 --------------------------------
 example:
     pybatch.py --script script_file.py --parameter thres=0.75 --infiles **/img*.nii.gz
 
-options:
+optional arguments:
   -h, --help            show this help message and exit
   -p [PARAMETER], --parameter [PARAMETER]
                         parameters
   -v, --verbose         verbose
-  -i INFILES [INFILES ...], --infiles INFILES [INFILES ...]
-                        file names
+  -r, --print_results   print results for each batch
   -s SCRIPT, --script SCRIPT
                         script file
   -m [MAX_WORKERS], --max_workers [MAX_WORKERS]
   -n, --dry-run         print first batch item and parameters then exit
   -x [SYS_PATH], --sys-path [SYS_PATH]
                         extra path
+  --no-shadow           do not create a shaow copy
+  -i INFILES [INFILES ...], --infiles INFILES [INFILES ...]
+                        file names
 
 ```
 

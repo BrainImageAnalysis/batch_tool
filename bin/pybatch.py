@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import hashlib
 import argparse
 import glob
 import importlib
 import multiprocessing
 import os
 import sys as sys
+import tempfile
 import textwrap
 
 
@@ -25,8 +27,6 @@ def parser_args():
                         help='verbose', default=False)
     parser.add_argument('-r', '--print_results', required=False, action='store_true',
                         help='print results for each batch', default=False)
-    parser.add_argument('-i', '--infiles', required=True,
-                        nargs='+', help='file names', type=str)
     parser.add_argument('-s', '--script', required=True,
                         nargs=1, help='script file', type=str)
     parser.add_argument('-m', '--max_workers', required=False, nargs='?',
@@ -36,6 +36,10 @@ def parser_args():
                         default=False)
     parser.add_argument('-x', '--sys-path', action='append',
                         nargs='?', help='extra path')
+    parser.add_argument('--no-shadow',  required=False, action='store_true',
+                        help='do not create a shadow copy', default=False)
+    parser.add_argument('-i', '--infiles', required=True,
+                        nargs='+', help='file names', type=str)
 
     def convert_arg_line_to_args(arg_line: str):
         # ignore commented lines
@@ -81,7 +85,7 @@ def load_script(filename):
         raise FileNotFoundError('file not found: "{}"'.format(filename))
 
     path, mod = os.path.split(os.path.abspath(filename))
-    print(path, mod)
+    print('loading {} from {}'.format(mod, path))
     add_to_syspath(path)
     mod = mod.replace('.py', '')
 
@@ -111,14 +115,55 @@ def expand_filenames(in_files):
             in_files_glob.append(file)
     return in_files_glob
 
+
+def unroll_filename(filename, no_shadow):
+    filename = os.path.expandvars(filename)
+    if not os.path.exists(filename):
+        raise FileNotFoundError('file not found: "{}"'.format(filename))
+    elif no_shadow:
+        return filename
+
+    with open(filename, 'r') as src:
+        tmp = src.read()
+        md5 = hashlib.md5(tmp.encode('utf-8')).hexdigest()
+        print('md5', md5)
+        unique_name = os.path.join(
+            tempfile.gettempdir(),
+            md5 + '.py'
+            )
+
+        if os.path.exists(unique_name):
+            with open(unique_name, 'r') as existing_src:
+                md5_check = hashlib.md5(
+                    existing_src.read().encode('utf-8')).hexdigest()
+                if md5 == md5_check:
+                    print('file already exists, and is sane: ', unique_name)
+                    return unique_name
+                else:
+                    print(
+                        'file already exists but is corrupt;',
+                        'will remove it: ', unique_name
+                    )
+                    # remove file to prevent loading wrong script
+                    os.remove(unique_name)
+
+        with open(unique_name, 'w') as f:
+            f.write(tmp)
+        print('shadow copy created: ', unique_name)
+
+    return unique_name
+
+
 def main(flags):
     param = parameters(flags.parameter)
     param['verbose'] = flags.verbose
 
-    script = load_script(*flags.script)
+    script_filename = unroll_filename(*flags.script, flags.no_shadow)
+    script = load_script(script_filename)
+
     if not hasattr(script, 'process_file'):
         raise Exception(
-            '"process_file(in_file, out_file, param, lock)" not defined in script "{}"'.format(*flags.script))
+            '"process_file(in_file, out_file, param, lock)" not defined in script "{}"'.format(script_filename))
 
     in_files = expand_filenames(flags.infiles)
     out_files = in_files
@@ -147,8 +192,8 @@ def main(flags):
 
         max_workers = flags.max_workers
         bj.process_files(script.process_file, in_files=in_files,
-                         out_files=out_files, param=param,
-                         max_workers=max_workers, group_batches=group_batches)
+                        out_files=out_files, param=param,
+                        max_workers=max_workers, group_batches=group_batches)
 
         if flags.print_results:
             bj.print_result()
@@ -158,6 +203,16 @@ def main(flags):
             print('result:', r)
 
         bj.print_rusage()
+
+        # close file and delete
+        if flags.no_shadow:
+            if flags.verbose:
+                print('no shadow copy created, not removing file')
+        else:
+            try:
+                os.remove(script_filename)
+            except Exception as e:
+                print('could not remove file:', e)
 
         return 0
 
