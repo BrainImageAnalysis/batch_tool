@@ -9,7 +9,6 @@ from concurrent import futures
 from contextlib import redirect_stdout
 from functools import wraps
 from io import StringIO
-from tqdm import tqdm
 
 class batchjob:
     def __init__(self) -> None:
