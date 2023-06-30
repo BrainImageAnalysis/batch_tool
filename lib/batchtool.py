@@ -42,7 +42,11 @@ class batchjob:
             res = []
             self.results = [None for i in range(len(batches))]
             for bid, batch in enumerate(batches):
-                infile, outfile = batch
+                if isinstance(batch, tuple):
+                    infile, outfile = batch
+                else:
+                    infile = batch
+                    outfile = None
                 p = copy.deepcopy(param)
                 p['batch_id'] = bid
                 p['d_shared'] = d_shared
@@ -66,7 +70,10 @@ class batchjob:
     def process_files(self, fn, in_files: list, out_files: list, param: dict, max_workers: int = 1, group_batches=None):
         if group_batches == None:
             # from single files
-            batches = list(zip(in_files, out_files))
+            if out_files is None:
+                batches = in_files
+            else:
+                batches = list(zip(in_files, out_files))
         else:
             batches = group_batches(in_files, out_files, param)
 
