@@ -1,0 +1,17 @@
+--max_workers 4
+--no-shadow
+  # commented out line leading spaces
+#--script ${HOME}/python/batch_tool/samples/test_script7.py
+--script samples/test_script7.py
+-p data_folder='/disk/matthias/NOBACKUP/cstemp3'
+-p pattern="**/out/c9/*_modelCS3D_labels_c[1-9].nii.gz"
+-p out_folder='/disk/matthias/NOBACKUP/cstemp3'
+-p extension='.nii.gz'
+-p out_extension='.nii'
+-p fstub='_cc_'
+#-p fstub=''
+-p subpath='cc'
+--generate-filenames
+-i generate_filenames
+--verbose
+#--dry-run

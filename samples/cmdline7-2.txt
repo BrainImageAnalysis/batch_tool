@@ -1,0 +1,13 @@
+--max_workers 4
+--no-shadow
+  # commented out line leading spaces
+#--script ${HOME}/python/batch_tool/samples/test_script7.py
+--script samples/test_script7.py
+#-p data_folder='/disk/matthias/NOBACKUP/cstemp3'
+--parameter-json samples/cmdline7-2-parameters.json
+# load twice, last one overwrites first one
+--parameter-json samples/cmdline7-2-parameters.json
+--generate-filenames
+-i generate_filenames
+--verbose
+#--dry-run

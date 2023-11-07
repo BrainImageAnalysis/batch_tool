@@ -1,0 +1,11 @@
+{
+    "data_folder": "/disk/matthias/NOBACKUP",
+    "pattern": "cstemp[1-9]/**/out/c9/*_modelCS3D_labels_c[1-9].nii.gz",
+    "out_folder": "${HOME}/NOBACKUP/cstemp3",
+    "extension":".nii.gz",
+    "out_extension":".nii",
+    "fstub": "_cc_",
+    "subpath": "cc",
+    "int_value": 5,
+    "list_value": [1,2,3]
+}
