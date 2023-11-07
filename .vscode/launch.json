@@ -31,6 +31,18 @@
             "justMyCode": false
         },
         {
+            "name": "pybatch cmdline7.txt",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/pybatch.py",
+            "args": [
+                "@samples/cmdline7.txt",
+                "--dry-run",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
