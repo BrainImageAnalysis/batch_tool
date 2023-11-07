@@ -227,15 +227,22 @@ def main(flags):
         print(' first batch item:')
         if group_batches == None:
             # from single files
+            num_batches = len(in_files)
             batch_in, batch_out = next(zip(in_files, out_files))
+            files_per_batch = [1 for _ in zip(in_files, out_files)]
         else:
-            batch_in, batch_out = next(iter(group_batches(in_files, out_files, param)))
+            batches = group_batches(in_files, out_files, param)
+            num_batches = len(batches)
+            batch_in, batch_out = next(iter(batches))
+            files_per_batch = [len(f) for f,_ in iter(batches)]
 
         print('  ', '   '.join([
             line+'\n' for line in
             batchjob_helper.format_batch(batch_in, batch_out).splitlines()
             ]))
 
+        print('number of batches:', num_batches)
+        print('files per batch:', files_per_batch)
         return 0
     else:
         bj = batchjob()
