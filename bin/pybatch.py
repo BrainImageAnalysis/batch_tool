@@ -3,11 +3,19 @@ import hashlib
 import argparse
 import glob
 import importlib
+
+try:
+    # use json5 if available to support comments
+    import json5 as json
+except ModuleNotFoundError:
+    import json
+
 import multiprocessing
 import os
 import sys as sys
 import tempfile
 import textwrap
+import traceback
 
 
 def parser_args():
@@ -23,6 +31,8 @@ def parser_args():
         '''))
     parser.add_argument('-p', '--parameter', action='append',
                         nargs='?', help='parameters')
+    parser.add_argument('-j', '--parameter-json', action='append',
+                        nargs='?', help='parameters in json file')
     parser.add_argument('-v', '--verbose', required=False, action='store_true',
                         help='verbose', default=False)
     parser.add_argument('-r', '--print_results', required=False, action='store_true',
@@ -38,6 +48,8 @@ def parser_args():
                         nargs='?', help='extra path')
     parser.add_argument('--no-shadow',  required=False, action='store_true',
                         help='do not create a shadow copy', default=False)
+    parser.add_argument('-g', '--generate-filenames',  required=False, action='store_true',
+                        help='generate filenames using function given as INFILES', default=False)
     parser.add_argument('-i', '--infiles', required=True,
                         nargs='+', help='file names', type=str)
 
@@ -62,15 +74,39 @@ def add_to_syspath(path: str):
     sys.path.append(path)
 
 
-def parameters(flags):
-    param = {}
-
+def parameters(flags,param={}):
     if flags == None:
         return param
 
     for p in flags:
         k, v = p.split('=')
-        param[k] = v
+        # strip quotes from parameters
+        param[k] = v.strip('\'').strip('\"')
+    return param
+
+
+def json_read(filename):
+    # do not catch exceptions
+    if (os.path.isfile(filename)):
+        with open(filename) as data_file:
+            #data = json.loads(re.sub("^\s*//.*","",data_file.read(),flags=re.MULTILINE))
+            data = json.load(data_file)
+    else:
+        data={}
+    return data
+
+
+def parameters_json(flags,param={}):
+    if flags == None:
+        return param
+
+    for filename in flags:
+        with open(filename) as data_file:
+            data = json.load(data_file)
+        for k, v in data.items():
+            print(k,v)
+            # copy parameters
+            param[k] = v
     return param
 
 
@@ -155,7 +191,8 @@ def unroll_filename(filename, no_shadow):
 
 
 def main(flags):
-    param = parameters(flags.parameter)
+    param = parameters_json(flags.parameter_json)
+    param = parameters(flags.parameter, param)
     param['verbose'] = flags.verbose
 
     script_filename = unroll_filename(*flags.script, flags.no_shadow)
@@ -164,9 +201,16 @@ def main(flags):
     if not hasattr(script, 'process_file'):
         raise Exception(
             '"process_file(in_file, out_file, param, lock)" not defined in script "{}"'.format(script_filename))
-
-    in_files = expand_filenames(flags.infiles)
-    out_files = in_files
+    if flags.generate_filenames:
+        attr_name = flags.infiles[0]
+        if not hasattr(script, attr_name):
+            raise Exception(
+                '"{}" not defined in script "{}"'.format(attr_name, script_filename))
+        generate_filenames = getattr(script, attr_name)
+        in_files, out_files = generate_filenames(param)
+    else:
+        in_files = expand_filenames(flags.infiles)
+        out_files = in_files
 
     if in_files == None or len(in_files) == 0:
         raise Exception("filenames are empty")
@@ -183,9 +227,15 @@ def main(flags):
         print(' first batch item:')
         if group_batches == None:
             # from single files
-            print(' ', next(zip(in_files, out_files)))
+            batch_in, batch_out = next(zip(in_files, out_files))
         else:
-            print(' ', next(iter(group_batches(in_files, out_files, param))))
+            batch_in, batch_out = next(iter(group_batches(in_files, out_files, param)))
+
+        print('  ', '   '.join([
+            line+'\n' for line in
+            batchjob_helper.format_batch(batch_in, batch_out).splitlines()
+            ]))
+
         return 0
     else:
         bj = batchjob()
@@ -221,7 +271,6 @@ if __name__ == "__main__":
 
     try:
         parser = parser_args()
-        #print(parser.prog)
         try:
             flags = parser.parse_args()
         except Exception as e:
@@ -235,6 +284,9 @@ if __name__ == "__main__":
 
         sys.exit(main(flags=flags))
     except Exception as e:
-        print('script failed:\n{}'.format('Unknown error' if e is None else e))
+        print('script failed:\n{}\n{}'.format(
+            flags.script[0],
+            'Unknown error' if e is None else 'Exception: ' + str(e)))
+        traceback.print_exc()
 
     sys.exit(-1)
