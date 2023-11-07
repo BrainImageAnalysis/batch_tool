@@ -56,8 +56,14 @@ class batchjob:
 
             for i, f in enumerate(futures.as_completed(res)):
                 if f.exception() == None:
+                    if isinstance(batches[i], tuple):
+                        infile, outfile = batches[i]
+                    else:
+                        infile = batches[i]
+                        outfile = None
                     print('success processing batch: {0}/{1}: {2}'.format(
-                        i, len(res), batches[i] if param.get('verbose') == True else '(set verbose to log files)'))
+                        i, len(res),
+                        '\n'+batchjob_helper.format_batch(infile, outfile) if param.get('verbose') == True else '(set verbose to log files)'))
                     r = f.result()
                     self.results[i] = r
                     # print('buf', buf[i])
@@ -216,6 +222,23 @@ class batchjob_helper:
         print(next(zip(in_files, out_files)))
 
     @staticmethod
+    def print_batch(batch_in, batch_out):
+        print(batchjob_helper.format_batch(batch_in, batch_out))
+
+    @staticmethod
+    def format_batch(batch_in, batch_out):
+        if not (isinstance(batch_in, tuple) or isinstance(batch_in, list)):
+            # single item
+            batch_in = [batch_in]
+            batch_out = [batch_out]
+        return 'batch_in:\n{}\nbatch_out:\n{}'.format(
+            '\n'.join([ ' - '+ str(s) for s in batch_in])
+            if batch_in is not None else "None",
+            '\n'.join([ ' - '+ str(s) for s in batch_out])
+            if batch_out is not None else "None"
+            )
+
+    @staticmethod
     def debug_process_file_batch(in_files, out_files, param, lock):
         with lock:
             print(param['batch_id'])
@@ -223,12 +246,11 @@ class batchjob_helper:
     @staticmethod
     def group_by_folder(in_files, out_files):
         tgi = [os.path.split(p) for p in in_files]
-        tgo = [os.path.split(p) for p in out_files]
-
         gi = defaultdict(list)
         for k, v in tgi:
             gi[k].append(v)
 
+        tgo = [os.path.split(p) for p in out_files]
         go = defaultdict(list)
         for k, v in tgo:
             go[k].append(v)
