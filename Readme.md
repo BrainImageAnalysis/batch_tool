@@ -127,7 +127,7 @@ pybatch.py --script samples/test_script.py --infiles b1/1 b1/2 b2/3 b3/4 b4/5 b4
 
 use dry-run to print paramters and first batch item
 ```bash
-pybatch.py --script samples/test_script.py --infiles 1 --parameter thres=0.75 -p result=result.nii.gz --dry-run
+pybatch.py --script samples/test_script.py --infiles b1/1 b1/2 b2/3 b3/4 b4/5 b4/6 b5/7 b5/8 b5/9 b5/10 --parameter thres=0.75 -p result=result.nii.gz --dry-run
 ```
 Output:
 ```
@@ -135,37 +135,47 @@ md5 2cdcb621189369bf6e0fc1a5229c8ac2
 file already exists, and is sane:  /tmp/2cdcb621189369bf6e0fc1a5229c8ac2.py
 loading 2cdcb621189369bf6e0fc1a5229c8ac2.py from /tmp
 script dry run:
- args: {'parameter': ['thres=0.75', 'result=result.nii.gz'], 'parameter_json': None, 'verbose': False, 'print_results': False, 'script': ['samples/test_script.py'], 'max_workers': 32, 'dry_run': True, 'sys_path': None, 'no_shadow': False, 'generate_filenames': False, 'infiles': ['1']}
+ args: {'parameter': ['thres=0.75', 'result=result.nii.gz'], 'parameter_json': None, 'verbose': False, 'print_results': False, 'script': ['samples/test_script.py'], 'max_workers': 32, 'dry_run': True, 'sys_path': None, 'no_shadow': False, 'generate_filenames': False, 'infiles': ['b1/1', 'b1/2', 'b2/3', 'b3/4', 'b4/5', 'b4/6', 'b5/7', 'b5/8', 'b5/9', 'b5/10']}
  parameters:
    thres: 0.75
    result: result.nii.gz
    verbose: False
  first batch item:
    batch_in:
-    - 1
+    - b1/1
+    - b1/2
    batch_out:
-    - 1
+    - b1/1
+    - b1/2
+
+number of batches: 5
+files per batch: [2, 1, 1, 2, 4]
 ```
 
 pybatch generates a shadow copy of the script before running it.
 Use ```--no-shadow``` to disable
 ```bash
-pybatch.py --no-shadow --script samples/test_script.py --infiles 1 --parameter thres=0.75 -p result=result.nii.gz --dry-run
+pybatch.py --no-shadow --script samples/test_script.py --infiles b1/1 b1/2 b2/3 b3/4 b4/5 b4/6 b5/7 b5/8 b5/9 b5/10 --parameter thres=0.75 -p result=result.nii.gz --dry-run
 ```
 Output:
 ```
 loading test_script.py from /home/matthias/python/batch_tool/samples
 script dry run:
- args: {'parameter': ['thres=0.75', 'result=result.nii.gz'], 'parameter_json': None, 'verbose': False, 'print_results': False, 'script': ['samples/test_script.py'], 'max_workers': 32, 'dry_run': True, 'sys_path': None, 'no_shadow': True, 'generate_filenames': False, 'infiles': ['1']}
+ args: {'parameter': ['thres=0.75', 'result=result.nii.gz'], 'parameter_json': None, 'verbose': False, 'print_results': False, 'script': ['samples/test_script.py'], 'max_workers': 32, 'dry_run': True, 'sys_path': None, 'no_shadow': True, 'generate_filenames': False, 'infiles': ['b1/1', 'b1/2', 'b2/3', 'b3/4', 'b4/5', 'b4/6', 'b5/7', 'b5/8', 'b5/9', 'b5/10']}
  parameters:
    thres: 0.75
    result: result.nii.gz
    verbose: False
  first batch item:
    batch_in:
-    - 1
+    - b1/1
+    - b1/2
    batch_out:
-    - 1
+    - b1/1
+    - b1/2
+
+number of batches: 5
+files per batch: [2, 1, 1, 2, 4]
 ```
 
 simple example
