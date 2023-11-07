@@ -5,12 +5,12 @@ from batchtool import batchjob, batchjob_helper  # type: ignore
 
 
 @batchjob.suppress_output
-def process_file(in_file, out_file, param, lock):
+def process_file(in_files, out_files, param, lock):
     with lock:
         print('process file (PID={0}/BID={1}): {2}'.format(
             os.getpid(), param['batch_id'], 'lock aquired'))
     print('process file (PID={0}/BID={1}): {2}'.format(
-        os.getpid(), param['batch_id'], in_file))
+        os.getpid(), param['batch_id'], in_files))
 
     # img, affine, header = read_in_file(in_file)
     # out_img_post = postprocess(img)
@@ -29,11 +29,15 @@ def process_result(results: list, param: dict):
 
 
 def group_batches_by_folder(in_files, out_files):
-    group_in_folders = [[infiles, outfiles]
-                        for i, infiles, outfiles in batchjob_helper.get_batch_per_folder(in_files, out_files)]
+    # generate tuple, otherwise outfiles will be interpreted as None:
+    # 1) group_in_folders = [ [infiles, outfiles]
+    # 2) group_in_folders = [ infiles
+    group_in_folders = [(infiles, outfiles) for i, infiles, outfiles in
+                        batchjob_helper.get_batch_per_folder(in_files, out_files)]
     return group_in_folders
 
 
 # example: group batches by folder
+# process_file will get a list of files to process
 def group_batches(infiles, outfiles, parameters):
     return group_batches_by_folder(infiles, outfiles)

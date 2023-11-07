@@ -20,7 +20,7 @@ def process_result(results: list, param: dict):
 
 
 def group_batches_by_folder(in_files, out_files):
-    group_in_folders = [[infiles, outfiles]
+    group_in_folders = [(infiles, outfiles)
                         for i, infiles, outfiles in batchjob_helper.get_batch_per_folder(in_files, out_files)]
     return group_in_folders
 
