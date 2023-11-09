@@ -101,6 +101,7 @@ def parameters_json(flags,param={}):
         return param
 
     for filename in flags:
+        filename = expandvars(filename)
         with open(filename) as data_file:
             data = json.load(data_file)
         for k, v in data.items():
@@ -130,13 +131,12 @@ def load_script(filename):
 
 
 def load_batchtool(this_file, extra_path):
-    # slurm tools
-    add_to_syspath('/disk/soft/bia_software/slurm_tools')
     # add self
     add_to_syspath(os.path.join(os.path.dirname(this_file), '../lib'))
     # add extra paths
     if extra_path != None:
         for p in extra_path:
+            p = expandvars(p)
             add_to_syspath(p.strip('\'').strip('\"'))
 
 
@@ -151,12 +151,16 @@ def expand_filenames(in_files):
             in_files_glob.append(file)
     return in_files_glob
 
-
-def unroll_filename(filename, no_shadow):
+def expandvars(filename):
     filename = os.path.expandvars(filename)
     if not os.path.exists(filename):
         raise FileNotFoundError('file not found: "{}"'.format(filename))
-    elif no_shadow:
+
+    return filename
+
+def unroll_filename(filename, no_shadow):
+    filename = expandvars(filename)
+    if no_shadow:
         return filename
 
     with open(filename, 'r') as src:
