@@ -4,6 +4,7 @@ import argparse
 import glob
 import importlib
 import signal
+import subprocess
 
 try:
     # use json5 if available to support comments
@@ -36,6 +37,8 @@ def parser_args():
                         nargs='?', help='parameters in json file')
     parser.add_argument('-v', '--verbose', required=False, action='store_true',
                         help='verbose', default=False)
+    parser.add_argument('-e', '--conda-env', required=False,
+                        help='run in conda environment', type=str)
     parser.add_argument('--cancel-gracefully', required=False, action='store_true',
                         help='wait for running batches when handling SIGINT', default=False)
     parser.add_argument('--over-commit', required=False, action='store_true',
@@ -310,6 +313,29 @@ if __name__ == "__main__":
             print(e)
             parser.print_help()
             sys.exit(-1)
+
+        if flags.conda_env:
+            # TODO check CONDA_SHLVL
+            # check if activate works
+            activate='. "$(conda info --base)/etc/profile.d/conda.sh" && conda activate {}'.format(flags.env)
+            out = subprocess.run(activate, shell=True)
+            if out.returncode != 0:
+                print('conda activate failed')
+                sys.exit(out.returncode)
+
+            deactivate='conda deactivate'
+            idx = sys.argv.index('--conda_env')
+            cmd = ' '.join(['"{}"'.format(arg) for arg in sys.argv[:idx] + sys.argv[idx+2:]])
+            run = '{} && {} && {}'.format(activate, cmd, deactivate)
+
+            # overwrite signal handler to do nothing
+            def signal_handler_spawner(sig, frame):
+                #print('received Ctrl+C in spawner; do nothing')
+                pass
+            signal.signal(signal.SIGINT, signal_handler_spawner)
+
+            out = subprocess.run(run, shell=True)
+            sys.exit(out.returncode)
 
         load_batchtool(sys.argv[0], flags.sys_path)
         # import the batchtool before call main
