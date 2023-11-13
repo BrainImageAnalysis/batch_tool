@@ -317,14 +317,14 @@ if __name__ == "__main__":
         if flags.conda_env:
             # TODO check CONDA_SHLVL
             # check if activate works
-            activate='. "$(conda info --base)/etc/profile.d/conda.sh" && conda activate {}'.format(flags.env)
+            activate='. "$(conda info --base)/etc/profile.d/conda.sh" && conda activate {}'.format(flags.conda_env)
             out = subprocess.run(activate, shell=True)
             if out.returncode != 0:
                 print('conda activate failed')
                 sys.exit(out.returncode)
 
             deactivate='conda deactivate'
-            idx = sys.argv.index('--conda_env')
+            idx = sys.argv.index('--conda-env')
             cmd = ' '.join(['"{}"'.format(arg) for arg in sys.argv[:idx] + sys.argv[idx+2:]])
             run = '{} && {} && {}'.format(activate, cmd, deactivate)
 
