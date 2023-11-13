@@ -3,6 +3,7 @@ import hashlib
 import argparse
 import glob
 import importlib
+import signal
 
 try:
     # use json5 if available to support comments
@@ -35,6 +36,10 @@ def parser_args():
                         nargs='?', help='parameters in json file')
     parser.add_argument('-v', '--verbose', required=False, action='store_true',
                         help='verbose', default=False)
+    parser.add_argument('--cancel-gracefully', required=False, action='store_true',
+                        help='wait for running batches when handling SIGINT', default=False)
+    parser.add_argument('--over-commit', required=False, action='store_true',
+                        help='allow more workers that cpu cores available', default=False)
     parser.add_argument('-r', '--print_results', required=False, action='store_true',
                         help='print results for each batch', default=False)
     parser.add_argument('-s', '--script', required=True,
@@ -249,8 +254,22 @@ def main(flags):
         print('files per batch:', files_per_batch)
         return 0
     else:
-        bj = batchjob()
+        bj = batchjob(over_commit=flags.over_commit)
 
+        # overwrite the signal handler again
+        def signal_handler_main(sig, frame):
+            gracefully = flags.cancel_gracefully
+
+            print('received Ctrl+C in main')
+            if gracefully:
+                print('waiting for jobs;press Ctrl+C again to kill')
+                # reset signal handler to kill when pressing Ctrl+C again
+                signal.signal(signal.SIGINT, signal_handler)
+            bj.cancel(gracefully)
+            if not gracefully:
+                sys.exit(-1)
+
+        signal.signal(signal.SIGINT, signal_handler_main)
         max_workers = flags.max_workers
         bj.process_files(script.process_file, in_files=in_files,
                         out_files=out_files, param=param,
@@ -277,6 +296,9 @@ def main(flags):
 
         return 0
 
+def signal_handler(sig, frame):
+    print('received Ctrl+C')
+    sys.exit(-1)
 
 if __name__ == "__main__":
 
@@ -293,6 +315,7 @@ if __name__ == "__main__":
         # import the batchtool before call main
         from batchtool import batchjob, batchjob_helper  # type: ignore
 
+        signal.signal(signal.SIGINT, signal_handler)
         sys.exit(main(flags=flags))
     except Exception as e:
         print('script failed:\n{}\n{}'.format(

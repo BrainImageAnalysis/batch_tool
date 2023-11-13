@@ -11,9 +11,10 @@ from functools import wraps
 from io import StringIO
 
 class batchjob:
-    def __init__(self) -> None:
-        self.results = None
-        pass
+    def __init__(self, *args, **kwargs) -> None:
+        self._results = None
+        self._cancel_callback = None
+        self._over_commit = kwargs.get('over_commit', False)
 
     def _init_job(self, batches: list, param: dict) -> tuple[list, dict]:
         # TODO add init function
@@ -27,7 +28,28 @@ class batchjob:
                 print('WARNING: max_workers={} > SLURM_CPUS_PER_TASK={}'.format(
                     max_workers,
                     cpus_per_task))
-                max_workers = cpus_per_task
+                if self._over_commit:
+                    print('WARNING: over commiting')
+                else:
+                    print('lowering max_workers to SLURM_CPUS_PER_TASK')
+                    max_workers = cpus_per_task
+        else:
+            cpus_per_task = multiprocessing.cpu_count()
+            if cpus_per_task < max_workers:
+                print('WARNING: max_workers={} > CPU_COUNT={}'.format(
+                    max_workers,
+                    cpus_per_task))
+                if self._over_commit:
+                    print('WARNING: over commiting')
+                else:
+                    print('lowering max_workers to CPU_COUNT')
+                    max_workers = cpus_per_task
+
+
+        if param.get('verbose') == True:
+            print("process batches using max_workers:", max_workers)
+
+
         with futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
             # creating shared dict and lock object
             m = multiprocessing.Manager()
@@ -40,7 +62,7 @@ class batchjob:
             batches, param = self._init_job(batches, param)
 
             res = []
-            self.results = [None for i in range(len(batches))]
+            self._results = [None for i in range(len(batches))]
             for bid, batch in enumerate(batches):
                 if isinstance(batch, tuple):
                     infile, outfile = batch
@@ -54,8 +76,25 @@ class batchjob:
                 #f.add_done_callback()
                 res.append(f)
 
+            # register cancel callback
+            def cancel_callback(gracefully=False):
+                if gracefully:
+                    print("cancel jobs; wait for running batches")
+                    jobs_to_cancel = [f.cancel() for f in res]
+                    print("- job cancelled:", jobs_to_cancel.count(True))
+                    print("- job running:  ", jobs_to_cancel.count(False))
+
+                else:
+                    print("cancel all jobs immediately")
+                    m.shutdown()
+
+            self._cancel_callback = cancel_callback
+
             for i, f in enumerate(futures.as_completed(res)):
-                if f.exception() == None:
+                if f.cancelled():
+                    print('cancelled processing batch: {0}/{1}'.format(
+                        i, len(res)))
+                elif f.exception() == None:
                     if isinstance(batches[i], tuple):
                         infile, outfile = batches[i]
                     else:
@@ -65,12 +104,20 @@ class batchjob:
                         i, len(res),
                         '\n'+batchjob_helper.format_batch(infile, outfile) if param.get('verbose') == True else '(set verbose to log files)'))
                     r = f.result()
-                    self.results[i] = r
-                    # print('buf', buf[i])
-                    #print('res', f.result())
+                    self._results[i] = r
                 else:
                     print('failed to process batch: {0}/{1}: {2}'.format(
                         i, len(res), f.exception()))
+
+            # remove cancel_callback
+            self._cancel_callback = None
+
+
+    def cancel(self, gracefully=False):
+        if self._cancel_callback is not None:
+            self._cancel_callback(gracefully)
+        # only call cancel once
+        self._cancel_callback = None
 
 
     def process_files(self, fn, in_files: list, out_files: list, param: dict, max_workers: int = 1, group_batches=None):
@@ -88,16 +135,16 @@ class batchjob:
 
 
     def print_result(self):
-        for r in self.results:
+        for r in self._results:
             print(r)
 
 
     def get_result(self):
-        return self.results
+        return self._results
 
 
     def process_result(self, fn):
-        return fn(self.results, self.param)
+        return fn(self._results, self.param)
 
     def print_rusage(self):
         # peak memory usage (kilobytes on Linux)
