@@ -15,6 +15,10 @@ options:
   -j [PARAMETER_JSON], --parameter-json [PARAMETER_JSON]
                         parameters in json file
   -v, --verbose         verbose
+  -e CONDA_ENV, --conda-env CONDA_ENV
+                        run in conda environment
+  --cancel-gracefully   wait for running batches when handling SIGINT
+  --over-commit         allow more workers that cpu cores available
   -r, --print_results   print results for each batch
   -s SCRIPT, --script SCRIPT
                         script file
@@ -190,7 +194,7 @@ pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script3.py
 
 count python files and folders which have files (example needs numpy)
 ```bash
-conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script4.py --infiles ~/python/batch_tool/**/*.py  --verbose
+pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script4.py --infiles ~/python/batch_tool/**/*.py  --verbose
 ```
 
 it is possible to use multiple processes in a batch process
@@ -210,11 +214,16 @@ pybatch.py @samples/cmdline.txt --dry-run
 
 Generate INFILES count python files and folders which have files (example needs numpy)
 ```bash
-conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script7.py --infiles ~/python/batch_tool/**/*.py  --verbose
+pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script7.py --infiles ~/python/batch_tool/**/*.py  --verbose
 ```
 ## conda
 
 run in a conda env
+```bash
+pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+```
+
+when using conda run signal handlers will not work
 ```bash
 conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
@@ -222,12 +231,14 @@ conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script
 ## slurm
 use slurm to run scripts
 
+note: when using conda run signal handlers will not work
+
 ```--max_workers``` and  ```-c, --cpus-per-task``` should make sense
 ```bash
-srun --pty --mem 16G -c 10 -t 240 conda run -n pytorch pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+srun --pty --mem 16G -c 10 -t 240 pybatch.py --conda-env pytorch2 --max_workers 10 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 ```bash
-srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 conda run -n pytorch  pybatch.py --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 ## jupyter notebooks
