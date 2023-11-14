@@ -47,12 +47,22 @@ class batchjob:
 
 
         if param.get('verbose') == True:
+            # actually + futures.process.EXTRA_QUEUED_CALLS
             print("process batches using max_workers:", max_workers)
 
+        # from concurrent.futures.process import EXTRA_QUEUED_CALLS
+        # max_workers = max(1, max_workers - EXTRA_QUEUED_CALLS)
 
-        with futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-            # creating shared dict and lock object
-            m = multiprocessing.Manager()
+        # default context, method='fork'
+        mp = multiprocessing.get_context()
+
+        # available is method='spawn' method='forkserver'
+        #mp = multiprocessing.get_context(method='spawn')
+        # creating shared dict and lock object
+        m = mp.Manager()
+
+        # futures.ThreadPoolExecutor also possible here
+        with futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp) as executor:
             d_shared = m.dict()
             self.param = param
             self.param['d_shared'] = d_shared
@@ -61,7 +71,7 @@ class batchjob:
             # call init
             batches, param = self._init_job(batches, param)
 
-            res = []
+            jobs = []
             self._results = [None for i in range(len(batches))]
             for bid, batch in enumerate(batches):
                 if isinstance(batch, tuple):
@@ -74,26 +84,30 @@ class batchjob:
                 p['d_shared'] = d_shared
                 f = executor.submit(fn, infile, outfile, p, lock)
                 #f.add_done_callback()
-                res.append(f)
+                jobs.append(f)
 
             # register cancel callback
             def cancel_callback(gracefully=False):
                 if gracefully:
                     print("cancel jobs; wait for running batches")
-                    jobs_to_cancel = [f.cancel() for f in res]
+                    jobs_to_cancel = [f.cancel() for f in jobs]
                     print("- job cancelled:", jobs_to_cancel.count(True))
-                    print("- job running:  ", jobs_to_cancel.count(False))
+                    jobs_running = [f.running() for f in jobs].count(True)
+                    print("- job running:  ", jobs_running)
+                    jobs_completed = jobs_to_cancel.count(False) - jobs_running
+                    print("- job completed:  ", jobs_completed)
 
                 else:
                     print("cancel all jobs immediately")
-                    m.shutdown()
+                    for p in mp.active_children():
+                        p.kill()
 
             self._cancel_callback = cancel_callback
 
-            for i, f in enumerate(futures.as_completed(res)):
+            for i, f in enumerate(futures.as_completed(jobs)):
                 if f.cancelled():
                     print('cancelled processing batch: {0}/{1}'.format(
-                        i, len(res)))
+                        i, len(jobs)))
                 elif f.exception() == None:
                     if isinstance(batches[i], tuple):
                         infile, outfile = batches[i]
@@ -101,13 +115,13 @@ class batchjob:
                         infile = batches[i]
                         outfile = None
                     print('success processing batch: {0}/{1}: {2}'.format(
-                        i, len(res),
+                        i, len(jobs),
                         '\n'+batchjob_helper.format_batch(infile, outfile) if param.get('verbose') == True else '(set verbose to log files)'))
                     r = f.result()
                     self._results[i] = r
                 else:
                     print('failed to process batch: {0}/{1}: {2}'.format(
-                        i, len(res), f.exception()))
+                        i, len(jobs), f.exception()))
 
             # remove cancel_callback
             self._cancel_callback = None
