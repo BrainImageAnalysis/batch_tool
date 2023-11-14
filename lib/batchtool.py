@@ -5,10 +5,24 @@ import os
 import resource
 import time
 from collections import defaultdict
+from multiprocessing import Semaphore
 from concurrent import futures
 from contextlib import redirect_stdout
 from functools import wraps
 from io import StringIO
+
+# proxy for submitting tasks
+def submit_proxy(cancel_semaphore, semaphore, function, *args, **kwargs):
+    if cancel_semaphore.acquire(blocking=False):
+        cancel_semaphore.release()
+    else:
+        # signal to cancel, do not start this job
+        raise futures.CancelledError()
+    # acquire the semaphore, blocks if occupied
+    semaphore.acquire()
+    # run the task
+    return function(*args, **kwargs)
+
 
 class batchjob:
     def __init__(self, *args, **kwargs) -> None:
@@ -19,6 +33,7 @@ class batchjob:
     def _init_job(self, batches: list, param: dict) -> tuple[list, dict]:
         # TODO add init function
         return batches, param
+
 
     def _process_file_batch(self, fn, batches: list, param: dict, max_workers: int = 1):
         sconfig = self.get_slurm_config()
@@ -60,6 +75,8 @@ class batchjob:
         #mp = multiprocessing.get_context(method='spawn')
         # creating shared dict and lock object
         m = mp.Manager()
+        semaphore = m.Semaphore(max_workers)
+        cancel_semaphore = m.Semaphore(1)
 
         # futures.ThreadPoolExecutor also possible here
         with futures.ProcessPoolExecutor(max_workers=max_workers, mp_context=mp) as executor:
@@ -70,6 +87,13 @@ class batchjob:
 
             # call init
             batches, param = self._init_job(batches, param)
+
+            # callback for completed tasks
+            def task_complete_callback(f):
+                # release the semaphore only if we did not receive a cancel
+                if not f.cancelled() and self._cancel_callback is not None:
+                    semaphore.release()
+
 
             jobs = []
             self._results = [None for i in range(len(batches))]
@@ -82,8 +106,13 @@ class batchjob:
                 p = copy.deepcopy(param)
                 p['batch_id'] = bid
                 p['d_shared'] = d_shared
-                f = executor.submit(fn, infile, outfile, p, lock)
+                #f = executor.submit(fn, infile, outfile, p, lock)
                 #f.add_done_callback()
+
+                # use semaphore do better control workers
+                f =  executor.submit(submit_proxy, cancel_semaphore, semaphore, fn, infile, outfile, p, lock)
+                f.add_done_callback(task_complete_callback)
+
                 jobs.append(f)
 
             # register cancel callback
@@ -93,10 +122,11 @@ class batchjob:
                     jobs_to_cancel = [f.cancel() for f in jobs]
                     print("- job cancelled:", jobs_to_cancel.count(True))
                     jobs_running = [f.running() for f in jobs].count(True)
-                    print("- job running:  ", jobs_running)
+                    print("- job running/queued:  ", jobs_running)
                     jobs_completed = jobs_to_cancel.count(False) - jobs_running
                     print("- job completed:  ", jobs_completed)
-
+                    # aquire and never release
+                    cancel_semaphore.acquire()
                 else:
                     print("cancel all jobs immediately")
                     for p in mp.active_children():
@@ -106,6 +136,9 @@ class batchjob:
 
             for i, f in enumerate(futures.as_completed(jobs)):
                 if f.cancelled():
+                    print('cancelled processing batch: {0}/{1}'.format(
+                        i, len(jobs)))
+                elif isinstance(f.exception(), futures.CancelledError):
                     print('cancelled processing batch: {0}/{1}'.format(
                         i, len(jobs)))
                 elif f.exception() == None:
