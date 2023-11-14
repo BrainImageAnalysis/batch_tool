@@ -13,7 +13,9 @@ from io import StringIO
 
 # proxy for submitting tasks
 def submit_proxy(cancel_semaphore, semaphore, function, *args, **kwargs):
-    if cancel_semaphore.acquire(blocking=False):
+    # use blocking and timeout to avoid race for checking for cancel
+    if cancel_semaphore.acquire(blocking=True, timeout=1):
+        # immediately release
         cancel_semaphore.release()
     else:
         # signal to cancel, do not start this job
