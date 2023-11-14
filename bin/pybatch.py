@@ -259,6 +259,13 @@ def main(flags):
     else:
         bj = batchjob(over_commit=flags.over_commit)
 
+        if flags.cancel_gracefully:
+            spawner_PID = os.getpid()
+            print(f'spawner PID: {spawner_PID} use "kill -SIGINT {spawner_PID}" to stop gracefully')
+        else:
+            spawner_PID = os.getpid()
+            print(f'spawner PID: {spawner_PID} use "kill -SIGINT {spawner_PID}" to stop')
+
         # overwrite the signal handler again
         def signal_handler_main(sig, frame):
             gracefully = flags.cancel_gracefully
