@@ -46,7 +46,7 @@ eval pybatch.py "@${SCRIPT_PATH}/cmdline.txt" --dry-run ${OUT} || echo "script $
 eval conda run -n pytorch2 pybatch.py "@${SCRIPT_PATH}/cmdline7.txt" ${OUT} || echo "script ${SCRIPT} failed: $((CNT++))"
 
 ((SCRIPT++))
-eval conda run -n pytorch2 pybatch.py "@${SCRIPT_PATH}/cmdline7-2.txt" ${OUT} || echo "script ${SCRIPT} failed: $((CNT++))"
+eval pybatch.py "@${SCRIPT_PATH}/cmdline7-2.txt" --conda-env pytorch2 ${OUT} || echo "script ${SCRIPT} failed: $((CNT++))"
 
 #############################
 echo ""
