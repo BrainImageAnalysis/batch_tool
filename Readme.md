@@ -223,7 +223,7 @@ run in a conda env
 pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
-when using conda run signal handlers will not work
+note: when using conda run signal handlers will not work
 ```bash
 conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
@@ -231,14 +231,25 @@ conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script
 ## slurm
 use slurm to run scripts
 
-note: when using conda run signal handlers will not work
-
 ```--max_workers``` and  ```-c, --cpus-per-task``` should make sense
 ```bash
 srun --pty --mem 16G -c 10 -t 240 pybatch.py --conda-env pytorch2 --max_workers 10 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 ```bash
 srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+```
+
+
+note: when using srun w/o '--pty' signal handlers will not work
+
+to shutdown gracefully using srun"--cancel-gracefully"
+send SIGINT to the spawner process
+
+the spawner PID is printed after launch
+```
+...
+spawner PID: 4131086 use "kill -SIGINT 4131086" to stop gracefully
+...
 ```
 
 ## jupyter notebooks
