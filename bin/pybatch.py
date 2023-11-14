@@ -331,7 +331,12 @@ if __name__ == "__main__":
                 sys.exit(out.returncode)
 
             deactivate='conda deactivate'
-            idx = sys.argv.index('--conda-env')
+            try:
+                idx = sys.argv.index('--conda-env')
+            except:
+                print('"--conda-env" can not be used in command line parameter file, use separately')
+                sys.exit(-1)
+
             cmd = ' '.join(['"{}"'.format(arg) for arg in sys.argv[:idx] + sys.argv[idx+2:]])
             run = '{} && {} && {}'.format(activate, cmd, deactivate)
 
