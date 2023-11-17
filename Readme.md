@@ -1,4 +1,6 @@
 # batch tool
+python script tool for parallel processing of files
+
 ```
 usage: pybatch.py [-h] [-p [PARAMETER]] [-v] [-r] -s SCRIPT [-m [MAX_WORKERS]]
                   [-n] [-x [SYS_PATH]] [--no-shadow] -i INFILES [INFILES ...]
@@ -184,27 +186,27 @@ files per batch: [2, 1, 1, 2, 4]
 
 simple example
 ```bash
-pybatch.py --max_workers 4 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+pybatch.py --max_workers 4 --script samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 uses a shared dict which can be accessed by each batch
 ```bash
-pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script3.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+pybatch.py --max_workers 10 --script samples/test_script3.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 count python files and folders which have files (example needs numpy)
 ```bash
-pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script4.py --infiles ~/python/batch_tool/**/*.py  --verbose
+pybatch.py --conda-env pytorch2 --script samples/test_script4.py --infiles **/*.py  --verbose
 ```
 
 it is possible to use multiple processes in a batch process
 ```bash
-pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script5.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+pybatch.py --max_workers 10 --script samples/test_script5.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 it is possible to use multiple threads in a batch process
 ```bash
-pybatch.py --max_workers 10 --script ~/python/batch_tool/samples/test_script6.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+pybatch.py --max_workers 10 --script samples/test_script6.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 read from file
@@ -212,20 +214,20 @@ read from file
 pybatch.py @samples/cmdline.txt --dry-run
 ```
 
-Generate INFILES count python files and folders which have files (example needs numpy)
+count python files and folders which contain python files (example needs numpy)
 ```bash
-pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script7.py --infiles ~/python/batch_tool/**/*.py  --verbose
+pybatch.py --conda-env pytorch2 --script samples/test_script7.py --infiles /path/to/batch_tool/**/*.py  --verbose
 ```
 ## conda
 
 run in a conda env
 ```bash
-pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+pybatch.py --conda-env pytorch2 --script samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 note: when using conda run signal handlers will not work
 ```bash
-conda run -n pytorch pybatch.py --script ~/python/batch_tool/samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+conda run -n pytorch pybatch.py --script samples/test_script.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 ## slurm
@@ -233,10 +235,10 @@ use slurm to run scripts
 
 ```--max_workers``` and  ```-c, --cpus-per-task``` should make sense
 ```bash
-srun --pty --mem 16G -c 10 -t 240 pybatch.py --conda-env pytorch2 --max_workers 10 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+srun --pty --mem 16G -c 10 -t 240 pybatch.py --conda-env pytorch2 --max_workers 10 --script samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 ```bash
-srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 pybatch.py --conda-env pytorch2 --script ~/python/batch_tool/samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
+srun --nodelist=rtxa5000-01 --gres=gpu:1 --pty --mem 16G -c 2 -t 240 pybatch.py --conda-env pytorch2 --script samples/test_script2.py --infiles 1 2 3 4 5 6 7 8 9 10  --verbose
 ```
 
 
