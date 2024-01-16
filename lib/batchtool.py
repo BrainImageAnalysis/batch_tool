@@ -10,6 +10,21 @@ from concurrent import futures
 from contextlib import redirect_stdout
 from functools import wraps
 from io import StringIO
+try:
+    from tqdm import tqdm
+except:
+    def tqdm(**kwargs):
+        print("tqdm not installed;  progress bar disabled")
+        return no_tqdm()
+
+# use for missing tqdm or verbose run
+class no_tqdm():
+    def __init__(self, *args, **kwargs):
+        pass
+    def update(self, *args, **kwargs):
+        pass
+    def close(self, *args, **kwargs):
+        pass
 
 # proxy for submitting tasks
 def submit_proxy(cancel_semaphore, semaphore, function, *args, **kwargs):
@@ -90,6 +105,14 @@ class batchjob:
             # call init
             batches, param = self._init_job(batches, param)
 
+            # define hard cancel before starting jobs, otherwise might deadlock
+            def cancel_callback_hard(gracefully=False):
+                print("cancel all jobs immediately")
+                for p in mp.active_children():
+                    p.kill()
+
+            self._cancel_callback = cancel_callback_hard
+
             # callback for completed tasks
             def task_complete_callback(f):
                 # release the semaphore only if we did not receive a cancel
@@ -111,13 +134,13 @@ class batchjob:
                 #f = executor.submit(fn, infile, outfile, p, lock)
                 #f.add_done_callback()
 
-                # use semaphore do better control workers
+                # use semaphore to better control workers
                 f =  executor.submit(submit_proxy, cancel_semaphore, semaphore, fn, infile, outfile, p, lock)
                 f.add_done_callback(task_complete_callback)
 
                 jobs.append(f)
 
-            # register cancel callback
+            # register cancel callback with graceful shutdown
             def cancel_callback(gracefully=False):
                 if gracefully:
                     print("cancel jobs; wait for running batches")
@@ -130,11 +153,14 @@ class batchjob:
                     # aquire and never release
                     cancel_semaphore.acquire()
                 else:
-                    print("cancel all jobs immediately")
-                    for p in mp.active_children():
-                        p.kill()
+                    cancel_callback_hard()
 
             self._cancel_callback = cancel_callback
+            if param.get('verbose') == False:
+                # use a progress bar
+                pbar_success = tqdm(total=len(jobs))
+            else:
+                pbar_success = no_tqdm()
 
             for i, f in enumerate(futures.as_completed(jobs)):
                 if f.cancelled():
@@ -149,15 +175,20 @@ class batchjob:
                     else:
                         infile = batches[i]
                         outfile = None
-                    print('success processing batch: {0}/{1}: {2}'.format(
-                        i, len(jobs),
-                        '\n'+batchjob_helper.format_batch(infile, outfile) if param.get('verbose') == True else '(set verbose to log files)'))
+                    if param.get('verbose') == True:
+                        print('success processing batch: {0}/{1}: {2}'.format(
+                            i, len(jobs),
+                            '\n'+batchjob_helper.format_batch(infile, outfile)))
+                    else:
+                        pbar_success.update(1)
+
                     r = f.result()
                     self._results[i] = r
                 else:
                     print('failed to process batch: {0}/{1}: {2}'.format(
                         i, len(jobs), f.exception()))
 
+            pbar_success.close()
             # remove cancel_callback
             self._cancel_callback = None
 
