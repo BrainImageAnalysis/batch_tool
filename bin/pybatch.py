@@ -332,7 +332,11 @@ if __name__ == "__main__":
 
             deactivate='conda deactivate'
             try:
-                idx = sys.argv.index('--conda-env')
+                # this parameter needs to be a commandline flag
+                try:
+                    idx = sys.argv.index('--conda-env')
+                except:
+                    idx = sys.argv.index('-e')
             except:
                 print('"--conda-env" can not be used in command line parameter file, use separately')
                 sys.exit(-1)
