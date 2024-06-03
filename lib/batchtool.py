@@ -357,7 +357,10 @@ class batchjob_helper:
         if not (isinstance(batch_in, tuple) or isinstance(batch_in, list)):
             # single item
             batch_in = [batch_in]
+        if not (isinstance(batch_out, tuple) or isinstance(batch_out, list)):
+            # single item
             batch_out = [batch_out]
+
         return 'batch_in:\n{}\nbatch_out:\n{}'.format(
             '\n'.join([ ' - '+ str(s) for s in batch_in])
             if batch_in is not None else "None",
