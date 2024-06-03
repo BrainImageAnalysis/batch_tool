@@ -395,3 +395,17 @@ class batchjob_helper:
                             for f in go.get(outfolder)]
 
             yield i, infiles_batch, outfiles_batch
+
+    @staticmethod
+    def str2bool(val: str) -> bool:
+        assert(type(val) == str)
+        return val.lower() in ("yes", "true", "t", "1")
+
+    @staticmethod
+    def as_bool(val) -> bool:
+        if type(val) == bool:
+            return val
+        elif type(val) == str:
+            return batchjob_helper.str2bool(val)
+        else:
+            raise NotImplementedError(f'no conversion from type: {type(val)}')
