@@ -246,7 +246,7 @@ def main(flags):
             batches = group_batches(in_files, out_files, param)
             num_batches = len(batches)
             batch_in, batch_out = next(iter(batches))
-            files_per_batch = [len(f) for f,_ in iter(batches)]
+            files_per_batch = [1 if type(f) == str else len(f) for f,_ in iter(batches)]
 
         print('  ', '   '.join([
             line+'\n' for line in
