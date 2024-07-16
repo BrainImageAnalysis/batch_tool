@@ -325,7 +325,9 @@ if __name__ == "__main__":
             # TODO check CONDA_SHLVL
             # check if activate works
             activate='. "$(conda info --base)/etc/profile.d/conda.sh" && conda activate {}'.format(flags.conda_env)
-            out = subprocess.run(activate, shell=True)
+            # some activate scripts require bash
+            shell = "bash"
+            out = subprocess.run(activate, shell=True, executable=shell)
             if out.returncode != 0:
                 print('conda activate failed')
                 sys.exit(out.returncode)
@@ -350,7 +352,7 @@ if __name__ == "__main__":
                 pass
             signal.signal(signal.SIGINT, signal_handler_spawner)
 
-            out = subprocess.run(run, shell=True)
+            out = subprocess.run(run, shell=True, executable=shell)
             sys.exit(out.returncode)
 
         load_batchtool(sys.argv[0], flags.sys_path)
