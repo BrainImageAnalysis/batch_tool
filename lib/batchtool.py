@@ -41,13 +41,44 @@ def submit_proxy(cancel_semaphore, semaphore, function, *args, **kwargs):
     return function(*args, **kwargs)
 
 
+class batchjob_config:
+    __instance = None
+    __d = {}
+
+    def __init__(self, *args, **kwargs) -> None:
+        pass
+
+    @classmethod
+    def getInstance(cls):
+        if batchjob_config.__instance is None:
+            batchjob_config.__instance = batchjob_config()
+        return batchjob_config.__instance
+
+    def get(self, key, default=None):
+        try:
+            v = self.__d.get(key, default)
+        except:
+            print(f'key not found k={key}')
+            v = None
+        return v
+
+    def set(self, d: dict):
+        for k in d.keys():
+            self.__d[k] = d[k]
+
+
 class batchjob:
     def __init__(self, *args, **kwargs) -> None:
         self._results = None
         self._cancel_callback = None
         self._over_commit = kwargs.get('over_commit', False)
+        self._batchjob_config = batchjob_config.getInstance()
+        # copy kwargs to batchjob_config instance
+        self._batchjob_config.set(kwargs)
 
-    def _init_job(self, batches: list, param: dict) -> tuple[list, dict]:
+    def _init_jobs(self, batches: list, param: dict) -> tuple[list, dict]:
+        # copy parameters to batchjob_config instance
+        self._batchjob_config.set(param)
         # TODO add init function
         return batches, param
 
@@ -103,7 +134,7 @@ class batchjob:
             lock = m.Lock()
 
             # call init
-            batches, param = self._init_job(batches, param)
+            batches, param = self._init_jobs(batches, param)
 
             # define hard cancel before starting jobs, otherwise might deadlock
             def cancel_callback_hard(gracefully=False):
@@ -250,6 +281,17 @@ class batchjob:
         #def wrapper(*args, **kwargs):
         def wrapper(infile, outfile, p, lock):
             # print out in the end if failed
+            try:
+                config = batchjob_config.getInstance()
+                __verbose = config.get("verbose")
+            except Exception as e:
+                print(f'failed to read config: e={e}')
+                raise e
+
+            if __verbose is not None and __verbose:
+                print("VERBOSE: suppress_output disabled")
+                return func(infile, outfile, p, lock)
+
             #print('start wrapper')
             try:
                 with redirect_stdout(StringIO()) as buf:
